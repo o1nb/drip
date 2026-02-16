@@ -120,6 +120,7 @@ local getcustomassets = {
 	['dripx/assets/new/textdrip.png'] = 'rbxassetid://14368358200',
 	['dripx/assets/new/utilityicon.png'] = 'rbxassetid://14368359107',
 	['dripx/assets/new/bucket.png'] = 'rbxassetid://14373395239',
+	['dripx/assets/new/dripcape.png'] = '',
 	['dripx/assets/new/warning.png'] = 'rbxassetid://14368361552',
 	['dripx/assets/new/worldicon.png'] = 'rbxassetid://14368362492'
 }
