@@ -11,7 +11,7 @@ end
 local function downloadFile(path, func)
 	if not isfile(path) then
 		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('Drip X/profiles/commit.txt')..'/'..select(1, path:gsub('Drip X/', '')), true)
+			return game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/'..readfile('dripx/profiles/commit.txt')..'/'..select(1, path:gsub('dripx/', '')), true)
 		end)
 		if not suc or res == '404: Not Found' then
 			error(res)
@@ -34,7 +34,7 @@ local function wipeFolder(path)
 	end
 end
 
-for _, folder in {'Drip X', 'Drip X/games', 'Drip X/profiles', 'Drip X/assets', 'Drip X/libraries', 'Drip X/guis'} do
+for _, folder in {'dripx', 'dripx/games', 'dripx/profiles', 'dripx/assets', 'dripx/libraries', 'dripx/guis'} do
 	if not isfolder(folder) then
 		makefolder(folder)
 	end
@@ -47,13 +47,13 @@ if not shared.VapeDeveloper then
 	local commit = subbed:find('currentOid')
 	commit = commit and subbed:sub(commit + 13, commit + 52) or nil
 	commit = commit and #commit == 40 and commit or 'main'
-	if commit == 'main' or (isfile('Drip X/profiles/commit.txt') and readfile('Drip X/profiles/commit.txt') or '') ~= commit then
-		wipeFolder('Drip X')
-		wipeFolder('Drip X/games')
-		wipeFolder('Drip X/guis')
-		wipeFolder('Drip X/libraries')
+	if commit == 'main' or (isfile('dripx/profiles/commit.txt') and readfile('dripx/profiles/commit.txt') or '') ~= commit then
+		wipeFolder('dripx')
+		wipeFolder('dripx/games')
+		wipeFolder('dripx/guis')
+		wipeFolder('dripx/libraries')
 	end
-	writefile('Drip X/profiles/commit.txt', commit)
+	writefile('dripx/profiles/commit.txt', commit)
 end
 
-return loadstring(downloadFile('Drip X/main.lua'), 'main')()
+return loadstring(downloadFile('dripx/main.lua'), 'main')()
