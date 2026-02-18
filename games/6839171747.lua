@@ -1,3 +1,4 @@
+--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 -- Doors Vape Modules
 -- Place ID: 6839171747
 -- Game ID: 2440500124
@@ -41,7 +42,9 @@ run(function()
 		end
 	end)
 end)
-
+for _, v in {'AntiRagdoll', 'TriggerBot', 'SilentAim', 'AutoRejoin', 'Rejoin', 'Disabler', 'Timer', 'ServerHop', 'MouseTP', 'MurderMystery', 'Killaura', 'HitBoxes', 'Triggerbot', 'Reach', 'AutoClicker', 'AimAssist', 'GamingChair', 'Tracers', 'PlayerModel', 'AntiFall', 'LongJump', 'Phase', 'TargetStrafe', 'Swim', 'Blink', 'ChatSpammer'} do
+	vape:Remove(v)
+end
 -- Fullbright
 run(function()
 	local Fullbright
@@ -137,7 +140,7 @@ run(function()
 	local NoAcceleration
 	local originalHrpProps
 	
-	NoAcceleration = vape.Categories.Blatant:CreateModule({
+	NoAcceleration = vape.Categories.Utility:CreateModule({
 		Name = 'NoAcceleration',
 		Function = function(callback)
 			if callback then
@@ -175,20 +178,24 @@ run(function()
 	})
 end)
 
--- Speed
+-- Fixed Speed Module with Working Bypass for Doors
+-- Replace the existing Speed module in your Vape file with this
+
 run(function()
 	local Speed
 	local SpeedValue
 	local AntiSpeedBypass
 	local speedValue = 16
 	local originalWalkSpeed = 16
+	local bypassEnabled = false
 	local clonedCollision
+	local bypassLoop
 	
 	Speed = vape.Categories.Blatant:CreateModule({
 		Name = 'Speed',
 		Function = function(callback)
 			if callback then
-				if not AntiSpeedBypass.Enabled then
+				if not bypassEnabled then
 					Speed:Toggle()
 					vape:CreateNotification('Speed', 'Enable AntiSpeed Bypass first!', 3)
 					return
@@ -221,7 +228,7 @@ run(function()
 				end
 			end
 		end,
-		Tooltip = 'Increase walk speed'
+		Tooltip = 'Increase walk speed - requires bypass'
 	})
 	
 	SpeedValue = Speed:CreateSlider({
@@ -237,9 +244,11 @@ run(function()
 	AntiSpeedBypass = Speed:CreateToggle({
 		Name = 'AntiSpeed Bypass',
 		Function = function(callback)
+			bypassEnabled = callback
 			if callback then
 				local char = lplr.Character or lplr.CharacterAdded:Wait()
 				local collisionPart = char:WaitForChild('CollisionPart')
+				
 				clonedCollision = collisionPart:Clone()
 				clonedCollision.Name = '_CollisionClone'
 				clonedCollision.Massless = true
@@ -248,24 +257,54 @@ run(function()
 				clonedCollision.CanQuery = false
 				clonedCollision.CustomPhysicalProperties = PhysicalProperties.new(0.01, 0.7, 0, 1, 1)
 				
-				task.spawn(function()
-					while AntiSpeedBypass.Enabled do
+				bypassLoop = task.spawn(function()
+					while bypassEnabled do
 						task.wait(0.23)
-						if clonedCollision then
-							clonedCollision.Massless = false
-							task.wait(0.23)
-							local root = char:FindFirstChild('HumanoidRootPart')
-							if root and root.Anchored then
+						pcall(function()
+							if clonedCollision and clonedCollision.Parent then
+								clonedCollision.Massless = false
+								task.wait(0.23)
+								local root = char:FindFirstChild('HumanoidRootPart')
+								if root and root.Anchored then
+									clonedCollision.Massless = true
+									task.wait(1)
+								end
 								clonedCollision.Massless = true
-								task.wait(1)
 							end
-							clonedCollision.Massless = true
-						end
+						end)
 					end
 				end)
+				
+				-- Handle character respawn
+				Speed:Clean(lplr.CharacterAdded:Connect(function(newChar)
+					task.wait(0.5)
+					if bypassEnabled then
+						if clonedCollision then 
+							pcall(function() clonedCollision:Destroy() end)
+						end
+						
+						local newCollisionPart = newChar:WaitForChild('CollisionPart', 5)
+						if newCollisionPart then
+							clonedCollision = newCollisionPart:Clone()
+							clonedCollision.Name = '_CollisionClone'
+							clonedCollision.Massless = true
+							clonedCollision.Parent = newChar
+							clonedCollision.CanCollide = false
+							clonedCollision.CanQuery = false
+							clonedCollision.CustomPhysicalProperties = PhysicalProperties.new(0.01, 0.7, 0, 1, 1)
+						end
+					end
+				end))
 			else
+				bypassEnabled = false
+				if bypassLoop then 
+					task.cancel(bypassLoop)
+					bypassLoop = nil
+				end
 				if clonedCollision then 
-					clonedCollision:Destroy() 
+					pcall(function()
+						clonedCollision:Destroy()
+					end)
 					clonedCollision = nil 
 				end
 			end
@@ -280,7 +319,7 @@ run(function()
 	local ReachDistance
 	local reachDistance = 25
 	
-	DoorReach = vape.Categories.Blatant:CreateModule({
+	DoorReach = vape.Categories.Utility:CreateModule({
 		Name = 'DoorReach',
 		Function = function(callback)
 			if callback then
@@ -494,7 +533,7 @@ run(function()
 		end)
 	end
 	
-	ObjectBypass = vape.Categories.Blatant:CreateModule({
+	ObjectBypass = vape.Categories.Utility:CreateModule({
 		Name = 'ObjectBypass',
 		Function = function(callback)
 			if callback then
@@ -634,7 +673,443 @@ run(function()
 		Tooltip = 'Tricks the game into thinking you are always crouching'
 	})
 end)
+-- ESP Modules for Doors (Add to existing file)
+-- Place these in vape.Categories.Render
 
+-- Door ESP
+run(function()
+	local DoorESP
+	local espHighlights = {}
+	
+	local function hasESPHighlight(obj, espName)
+		if not obj then return true end
+		for _, child in pairs(obj:GetChildren()) do
+			if child:IsA('Highlight') and child.Name == espName .. 'ESP' then
+				return true
+			end
+		end
+		return false
+	end
+	
+	local function clearESP()
+		for _, item in pairs(espHighlights) do
+			if item and item.Parent then 
+				item:Destroy() 
+			end
+		end
+		table.clear(espHighlights)
+	end
+	
+	local function addESPToObject(obj)
+		if not obj or hasESPHighlight(obj, 'Door') then return end
+		
+		local highlight = Instance.new('Highlight')
+		highlight.Name = 'DoorESP'
+		highlight.FillColor = Color3.fromRGB(0, 255, 0)
+		highlight.OutlineColor = Color3.fromRGB(0, 200, 0)
+		highlight.FillTransparency = 0.5
+		highlight.OutlineTransparency = 0
+		highlight.Parent = obj
+		table.insert(espHighlights, highlight)
+	end
+	
+	local function createDoorESP()
+		pcall(function()
+			local currentRooms = workspace:FindFirstChild('CurrentRooms')
+			if currentRooms then
+				for _, room in pairs(currentRooms:GetChildren()) do
+					local door = room:FindFirstChild('Door')
+					if door and door:IsA('Model') then
+						addESPToObject(door)
+					end
+				end
+			end
+		end)
+	end
+	
+	local function cleanupDestroyedESP()
+		local validHighlights = {}
+		for _, item in pairs(espHighlights) do
+			if item and item.Parent then 
+				table.insert(validHighlights, item) 
+			end
+		end
+		espHighlights = validHighlights
+	end
+	
+	DoorESP = vape.Categories.Render:CreateModule({
+		Name = 'DoorESP',
+		Function = function(callback)
+			if callback then
+				createDoorESP()
+				
+				task.spawn(function()
+					while DoorESP.Enabled do
+						task.wait(0.5)
+						cleanupDestroyedESP()
+						createDoorESP()
+					end
+				end)
+			else
+				clearESP()
+			end
+		end,
+		Tooltip = 'Highlights doors'
+	})
+end)
+
+-- Objective ESP
+run(function()
+	local ObjectiveESP
+	local espHighlights = {}
+	
+	local function hasESPHighlight(obj, espName)
+		if not obj then return true end
+		for _, child in pairs(obj:GetChildren()) do
+			if (child:IsA('Highlight') or child:IsA('BillboardGui')) and child.Name == espName .. 'ESP' then
+				return true
+			end
+		end
+		return false
+	end
+	
+	local function clearESP()
+		for _, item in pairs(espHighlights) do
+			if item and item.Parent then 
+				item:Destroy() 
+			end
+		end
+		table.clear(espHighlights)
+	end
+	
+	local function addESPToObject(obj, color, outlineColor, labelText)
+		if not obj or hasESPHighlight(obj, 'Objective') then return end
+		
+		local highlight = Instance.new('Highlight')
+		highlight.Name = 'ObjectiveESP'
+		highlight.FillColor = color
+		highlight.OutlineColor = outlineColor
+		highlight.FillTransparency = 0.5
+		highlight.OutlineTransparency = 0
+		highlight.Parent = obj
+		table.insert(espHighlights, highlight)
+		
+		if labelText then
+			local billboard = Instance.new('BillboardGui')
+			billboard.Name = 'ObjectiveESP'
+			billboard.AlwaysOnTop = true
+			billboard.Size = UDim2.new(0, 100, 0, 50)
+			billboard.StudsOffset = Vector3.new(0, 2, 0)
+			billboard.Parent = obj
+			
+			local textLabel = Instance.new('TextLabel')
+			textLabel.Size = UDim2.new(1, 0, 1, 0)
+			textLabel.BackgroundTransparency = 1
+			textLabel.Text = labelText
+			textLabel.TextColor3 = color
+			textLabel.TextStrokeTransparency = 0
+			textLabel.TextScaled = true
+			textLabel.Font = Enum.Font.GothamBold
+			textLabel.Parent = billboard
+			table.insert(espHighlights, billboard)
+		end
+	end
+	
+	local function createObjectiveESP()
+		pcall(function()
+			local currentRooms = workspace:FindFirstChild('CurrentRooms')
+			if currentRooms then
+				for _, room in pairs(currentRooms:GetChildren()) do
+					for _, obj in pairs(room:GetDescendants()) do
+						local nameMap = {
+							KeyObtain = 'Key',
+							FuseObtain = 'Fuse',
+							FuseHolder = 'Fuse',
+							LiveHintBook = 'Book',
+							LeverForGate = 'Lever',
+							LiveBreakerPolePickup = 'Breaker',
+							TimerLever = 'Timer',
+							Padlock = 'Lock',
+						}
+						local label = nameMap[obj.Name]
+						if label then
+							addESPToObject(obj, Color3.fromRGB(255, 255, 0), Color3.fromRGB(200, 200, 0), label)
+						end
+					end
+				end
+			end
+		end)
+	end
+	
+	local function cleanupDestroyedESP()
+		local validHighlights = {}
+		for _, item in pairs(espHighlights) do
+			if item and item.Parent then 
+				table.insert(validHighlights, item) 
+			end
+		end
+		espHighlights = validHighlights
+	end
+	
+	ObjectiveESP = vape.Categories.Render:CreateModule({
+		Name = 'ObjectiveESP',
+		Function = function(callback)
+			if callback then
+				createObjectiveESP()
+				
+				task.spawn(function()
+					while ObjectiveESP.Enabled do
+						task.wait(0.5)
+						cleanupDestroyedESP()
+						createObjectiveESP()
+					end
+				end)
+			else
+				clearESP()
+			end
+		end,
+		Tooltip = 'Highlights objectives (Keys, Fuses, Books, Levers, etc.)'
+	})
+end)
+
+-- Entity ESP
+run(function()
+	local EntityESP
+	local espHighlights = {}
+	
+	local function hasESPHighlight(obj, espName)
+		if not obj then return true end
+		for _, child in pairs(obj:GetChildren()) do
+			if (child:IsA('Highlight') or child:IsA('BillboardGui')) and child.Name == espName .. 'ESP' then
+				return true
+			end
+		end
+		return false
+	end
+	
+	local function clearESP()
+		for _, item in pairs(espHighlights) do
+			if item and item.Parent then 
+				item:Destroy() 
+			end
+		end
+		table.clear(espHighlights)
+	end
+	
+	local function addESPToObject(obj, color, outlineColor, labelText)
+		if not obj or hasESPHighlight(obj, 'Entity') then return end
+		
+		local highlight = Instance.new('Highlight')
+		highlight.Name = 'EntityESP'
+		highlight.FillColor = color
+		highlight.OutlineColor = outlineColor
+		highlight.FillTransparency = 0.5
+		highlight.OutlineTransparency = 0
+		highlight.Parent = obj
+		table.insert(espHighlights, highlight)
+		
+		if labelText then
+			local billboard = Instance.new('BillboardGui')
+			billboard.Name = 'EntityESP'
+			billboard.AlwaysOnTop = true
+			billboard.Size = UDim2.new(0, 100, 0, 50)
+			billboard.StudsOffset = Vector3.new(0, 2, 0)
+			billboard.Parent = obj
+			
+			local textLabel = Instance.new('TextLabel')
+			textLabel.Size = UDim2.new(1, 0, 1, 0)
+			textLabel.BackgroundTransparency = 1
+			textLabel.Text = labelText
+			textLabel.TextColor3 = color
+			textLabel.TextStrokeTransparency = 0
+			textLabel.TextScaled = true
+			textLabel.Font = Enum.Font.GothamBold
+			textLabel.Parent = billboard
+			table.insert(espHighlights, billboard)
+		end
+	end
+	
+	local function createEntityESP()
+		pcall(function()
+			local entityMap = {
+				RushMoving = { Color3.fromRGB(255, 0, 0), Color3.fromRGB(200, 0, 0), 'RUSH' },
+				AmbushMoving = { Color3.fromRGB(255, 100, 0), Color3.fromRGB(200, 80, 0), 'AMBUSH' },
+				Eyes = { Color3.fromRGB(150, 0, 255), Color3.fromRGB(120, 0, 200), 'EYES' },
+				Halt = { Color3.fromRGB(0, 200, 255), Color3.fromRGB(0, 150, 200), 'HALT' },
+				Screech = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200), 'SCREECH' },
+				A60 = { Color3.fromRGB(255, 50, 50), Color3.fromRGB(200, 30, 30), 'A60' },
+				A120 = { Color3.fromRGB(255, 50, 50), Color3.fromRGB(200, 30, 30), 'A120' },
+			}
+			
+			for _, child in pairs(workspace:GetChildren()) do
+				local info = entityMap[child.Name]
+				if info and child:IsA('Model') then
+					addESPToObject(child, info[1], info[2], info[3])
+				end
+			end
+			
+			local currentRooms = workspace:FindFirstChild('CurrentRooms')
+			if currentRooms then
+				for _, room in pairs(currentRooms:GetChildren()) do
+					-- Figure ESP
+					local figureSetup = room:FindFirstChild('FigureSetup')
+					if figureSetup then
+						local figureRig = figureSetup:FindFirstChild('FigureRig')
+						if figureRig then
+							addESPToObject(figureRig, Color3.fromRGB(255, 0, 0), Color3.fromRGB(200, 0, 0), 'FIGURE')
+						end
+					end
+					
+					-- Seek ESP
+					local seekSetup = room:FindFirstChild('SeekSetup') or room:FindFirstChild('Seek')
+					if seekSetup then
+						local seekModel = seekSetup:FindFirstChild('SeekRig') or seekSetup:FindFirstChild('Seek') or seekSetup
+						if seekModel and seekModel:IsA('Model') then
+							addESPToObject(seekModel, Color3.fromRGB(0, 0, 0), Color3.fromRGB(100, 100, 100), 'SEEK')
+						end
+					end
+					
+					-- Snare ESP
+					local assets = room:FindFirstChild('Assets')
+					if assets then
+						for _, obj in pairs(assets:GetChildren()) do
+							if obj.Name == 'Snare' then
+								addESPToObject(obj, Color3.fromRGB(255, 100, 100), Color3.fromRGB(200, 80, 80), 'SNARE')
+							end
+						end
+					end
+				end
+			end
+		end)
+	end
+	
+	local function cleanupDestroyedESP()
+		local validHighlights = {}
+		for _, item in pairs(espHighlights) do
+			if item and item.Parent then 
+				table.insert(validHighlights, item) 
+			end
+		end
+		espHighlights = validHighlights
+	end
+	
+	EntityESP = vape.Categories.Render:CreateModule({
+		Name = 'EntityESP',
+		Function = function(callback)
+			if callback then
+				createEntityESP()
+				
+				task.spawn(function()
+					while EntityESP.Enabled do
+						task.wait(0.5)
+						cleanupDestroyedESP()
+						createEntityESP()
+					end
+				end)
+			else
+				clearESP()
+			end
+		end,
+		Tooltip = 'Highlights entities (Rush, Ambush, Eyes, Figure, Seek, etc.)'
+	})
+end)
+
+-- Chest ESP
+run(function()
+	local ChestESP
+	local espHighlights = {}
+	
+	local function hasESPHighlight(obj, espName)
+		if not obj then return true end
+		for _, child in pairs(obj:GetChildren()) do
+			if (child:IsA('Highlight') or child:IsA('BillboardGui')) and child.Name == espName .. 'ESP' then
+				return true
+			end
+		end
+		return false
+	end
+	
+	local function clearESP()
+		for _, item in pairs(espHighlights) do
+			if item and item.Parent then 
+				item:Destroy() 
+			end
+		end
+		table.clear(espHighlights)
+	end
+	
+	local function createChestESP(chest)
+		if hasESPHighlight(chest, 'Chest') then return end
+		
+		local highlight = Instance.new('Highlight')
+		highlight.Name = 'ChestESP'
+		highlight.FillColor = Color3.fromRGB(255, 215, 0)
+		highlight.OutlineColor = Color3.fromRGB(200, 170, 0)
+		highlight.FillTransparency = 0.5
+		highlight.OutlineTransparency = 0
+		highlight.Parent = chest
+		table.insert(espHighlights, highlight)
+		
+		local billboard = Instance.new('BillboardGui')
+		billboard.Name = 'ChestESP'
+		billboard.AlwaysOnTop = true
+		billboard.Size = UDim2.new(0, 100, 0, 50)
+		billboard.StudsOffset = Vector3.new(0, 2, 0)
+		billboard.Parent = chest
+		
+		local textLabel = Instance.new('TextLabel')
+		textLabel.Size = UDim2.new(1, 0, 1, 0)
+		textLabel.BackgroundTransparency = 1
+		textLabel.Text = 'Chest'
+		textLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+		textLabel.TextStrokeTransparency = 0
+		textLabel.TextScaled = true
+		textLabel.Font = Enum.Font.GothamBold
+		textLabel.Parent = billboard
+		
+		table.insert(espHighlights, billboard)
+	end
+	
+	local function findChests()
+		pcall(function()
+			for _, chest in pairs(workspace:GetDescendants()) do
+				if chest.Name:lower():find('chest') and chest:IsA('Model') then
+					createChestESP(chest)
+				end
+			end
+		end)
+	end
+	
+	local function cleanupDestroyedESP()
+		local validHighlights = {}
+		for _, item in pairs(espHighlights) do
+			if item and item.Parent then 
+				table.insert(validHighlights, item) 
+			end
+		end
+		espHighlights = validHighlights
+	end
+	
+	ChestESP = vape.Categories.Render:CreateModule({
+		Name = 'ChestESP',
+		Function = function(callback)
+			if callback then
+				findChests()
+				
+				task.spawn(function()
+					while ChestESP.Enabled do
+						task.wait(1)
+						cleanupDestroyedESP()
+						findChests()
+					end
+				end)
+			else
+				clearESP()
+			end
+		end,
+		Tooltip = 'Highlights chests'
+	})
+end)
 -- Anti Eyes
 run(function()
 	local AntiEyes
@@ -1280,3 +1755,357 @@ if store.hookSupported then
 		})
 	end)
 end
+-- Phase Module with Multiple Modes for Doors
+-- Works with Speed to phase through doors and gates
+
+run(function()
+	local Phase
+	local PhaseMode
+	local VelocityBoost
+	local AutoPhase
+	local phaseMode = 'Normal'
+	local velocityBoost = 50
+	local autoPhaseEnabled = false
+	local originalCollisions = {}
+	local phaseActive = false
+	
+	local function saveOriginalCollisions(character)
+		originalCollisions = {}
+		for _, part in pairs(character:GetDescendants()) do
+			if part:IsA('BasePart') then
+				originalCollisions[part] = part.CanCollide
+			end
+		end
+	end
+	
+	local function restoreCollisions(character)
+		for part, canCollide in pairs(originalCollisions) do
+			if part and part.Parent then
+				part.CanCollide = canCollide
+			end
+		end
+		table.clear(originalCollisions)
+	end
+	
+	local function enableNormalPhase(character)
+		pcall(function()
+			saveOriginalCollisions(character)
+			for _, part in pairs(character:GetDescendants()) do
+				if part:IsA('BasePart') then
+					part.CanCollide = false
+				end
+			end
+			phaseActive = true
+		end)
+	end
+	
+	local function enableVelocityPhase(character)
+		pcall(function()
+			enableNormalPhase(character)
+			local hrp = character:FindFirstChild('HumanoidRootPart')
+			if hrp then
+				local humanoid = character:FindFirstChild('Humanoid')
+				if humanoid and humanoid.MoveDirection.Magnitude > 0 then
+					hrp.Velocity = hrp.Velocity + (humanoid.MoveDirection * velocityBoost)
+				end
+			end
+		end)
+	end
+	
+	local function enableSmartPhase(character)
+		pcall(function()
+			local hrp = character:FindFirstChild('HumanoidRootPart')
+			if not hrp then return end
+			
+			-- Check if there's an obstacle in front
+			local rayParams = RaycastParams.new()
+			rayParams.FilterDescendantsInstances = {character}
+			rayParams.FilterType = Enum.RaycastFilterType.Exclude
+			
+			local humanoid = character:FindFirstChild('Humanoid')
+			if humanoid and humanoid.MoveDirection.Magnitude > 0 then
+				local direction = humanoid.MoveDirection * 5
+				local result = workspace:Raycast(hrp.Position, direction, rayParams)
+				
+				if result and result.Instance then
+					-- Check if it's a door, gate, or obstacle
+					local hitName = result.Instance.Name:lower()
+					if hitName:find('door') or hitName:find('gate') or hitName:find('wall') or 
+					   hitName:find('collision') or result.Instance.Parent.Name:lower():find('door') then
+						if not phaseActive then
+							enableNormalPhase(character)
+						end
+						return
+					end
+				end
+			end
+			
+			-- No obstacle, restore collisions
+			if phaseActive then
+				restoreCollisions(character)
+				phaseActive = false
+			end
+		end)
+	end
+	
+	local function enablePartialPhase(character)
+		pcall(function()
+			saveOriginalCollisions(character)
+			for _, part in pairs(character:GetDescendants()) do
+				if part:IsA('BasePart') and part.Name ~= 'HumanoidRootPart' then
+					-- Keep HumanoidRootPart collision to not fall through floor
+					part.CanCollide = false
+				end
+			end
+			phaseActive = true
+		end)
+	end
+	
+	local function applyPhaseMode(character)
+		if phaseMode == 'Normal' then
+			enableNormalPhase(character)
+		elseif phaseMode == 'Velocity' then
+			enableVelocityPhase(character)
+		elseif phaseMode == 'Smart' then
+			enableSmartPhase(character)
+		elseif phaseMode == 'Partial' then
+			enablePartialPhase(character)
+		end
+	end
+	
+	Phase = vape.Categories.Combat:CreateModule({
+		Name = 'Phase',
+		Function = function(callback)
+			if callback then
+				local character = lplr.Character
+				if character then
+					applyPhaseMode(character)
+				end
+				
+				-- Continuous phase update
+				Phase:Clean(runService.Heartbeat:Connect(function()
+					local char = lplr.Character
+					if char then
+						if phaseMode == 'Velocity' then
+							-- Reapply velocity phase each frame if moving
+							local humanoid = char:FindFirstChild('Humanoid')
+							if humanoid and humanoid.MoveDirection.Magnitude > 0 then
+								enableVelocityPhase(char)
+							end
+						elseif phaseMode == 'Smart' then
+							-- Smart mode checks every frame
+							enableSmartPhase(char)
+						elseif phaseMode == 'Normal' or phaseMode == 'Partial' then
+							-- Ensure phase stays active
+							if not phaseActive then
+								applyPhaseMode(char)
+							end
+						end
+					end
+				end))
+				
+				-- Handle character respawn
+				Phase:Clean(lplr.CharacterAdded:Connect(function(newChar)
+					task.wait(0.5)
+					if Phase.Enabled then
+						phaseActive = false
+						applyPhaseMode(newChar)
+					end
+				end))
+			else
+				local character = lplr.Character
+				if character then
+					restoreCollisions(character)
+				end
+				phaseActive = false
+			end
+		end,
+		Tooltip = 'Walk through doors, gates, and walls'
+	})
+	
+	PhaseMode = Phase:CreateDropdown({
+		Name = 'Mode',
+		List = {'Normal', 'Velocity', 'Smart', 'Partial'},
+		Default = 'Normal',
+		Function = function(val)
+			phaseMode = val
+			if Phase.Enabled then
+				local character = lplr.Character
+				if character then
+					restoreCollisions(character)
+					phaseActive = false
+					applyPhaseMode(character)
+				end
+			end
+		end,
+		Tooltip = 'Normal: Always phase | Velocity: Phase with speed boost | Smart: Auto phase near obstacles | Partial: Phase upper body only'
+	})
+	
+	VelocityBoost = Phase:CreateSlider({
+		Name = 'Velocity Boost',
+		Min = 0,
+		Max = 200,
+		Default = 50,
+		Function = function(val)
+			velocityBoost = val
+		end,
+		Tooltip = 'Velocity boost amount (Velocity mode only)'
+	})
+end)
+
+-- Phase Clip (Alternative phase using CFrame)
+run(function()
+	local PhaseClip
+	local ClipDistance
+	local ClipKey
+	local clipDistance = 10
+	local isClipKeyHeld = false
+	local clipKey = Enum.KeyCode.C
+	
+	inputService.InputBegan:Connect(function(input, gameProcessed)
+		if input.KeyCode == clipKey and not gameProcessed then
+			isClipKeyHeld = true
+		end
+	end)
+	
+	inputService.InputEnded:Connect(function(input)
+		if input.KeyCode == clipKey then
+			isClipKeyHeld = false
+		end
+	end)
+	
+	PhaseClip = vape.Categories.Combat:CreateModule({
+		Name = 'PhaseClip',
+		Function = function(callback)
+			if callback then
+				PhaseClip:Clean(runService.Heartbeat:Connect(function()
+					if isClipKeyHeld then
+						pcall(function()
+							local character = lplr.Character
+							if character then
+								local hrp = character:FindFirstChild('HumanoidRootPart')
+								local humanoid = character:FindFirstChild('Humanoid')
+								if hrp and humanoid and humanoid.MoveDirection.Magnitude > 0 then
+									-- Clip forward through obstacles
+									local clipVector = humanoid.MoveDirection * clipDistance
+									hrp.CFrame = hrp.CFrame + clipVector
+								end
+							end
+						end)
+					end
+				end))
+			end
+		end,
+		Tooltip = 'Hold C to clip through obstacles'
+	})
+	
+	ClipDistance = PhaseClip:CreateSlider({
+		Name = 'Clip Distance',
+		Min = 5,
+		Max = 50,
+		Default = 10,
+		Function = function(val)
+			clipDistance = val
+		end,
+		Tooltip = 'How far to clip each tick'
+	})
+	
+	ClipKey = PhaseClip:CreateDropdown({
+		Name = 'Clip Key',
+		List = {'C', 'V', 'X', 'Z'},
+		Default = 'C',
+		Function = function(val)
+			clipKey = Enum.KeyCode[val]
+		end
+	})
+end)
+
+-- Door Clip (Specific for doors)
+run(function()
+	local DoorClip
+	local AutoClipDoors
+	local ClipRange
+	local autoClipDoors = true
+	local clipRange = 15
+	
+	local function clipThroughDoor(door)
+		pcall(function()
+			local character = lplr.Character
+			if not character then return end
+			local hrp = character:FindFirstChild('HumanoidRootPart')
+			if not hrp then return end
+			
+			-- Find door position
+			local doorPart = door:IsA('BasePart') and door or door:FindFirstChildWhichIsA('BasePart')
+			if doorPart then
+				local doorPos = doorPart.Position
+				local charPos = hrp.Position
+				
+				-- Teleport to other side of door
+				local direction = (doorPos - charPos).Unit
+				local targetPos = doorPos + (direction * 10)
+				hrp.CFrame = CFrame.new(targetPos)
+			end
+		end)
+	end
+	
+	DoorClip = vape.Categories.Combat:CreateModule({
+		Name = 'DoorClip',
+		Function = function(callback)
+			if callback then
+				DoorClip:Clean(runService.Heartbeat:Connect(function()
+					if not autoClipDoors then return end
+					
+					pcall(function()
+						local character = lplr.Character
+						if not character then return end
+						local hrp = character:FindFirstChild('HumanoidRootPart')
+						if not hrp then return end
+						
+						local currentRooms = workspace:FindFirstChild('CurrentRooms')
+						if not currentRooms then return end
+						
+						-- Find nearby locked doors
+						for _, room in pairs(currentRooms:GetChildren()) do
+							local door = room:FindFirstChild('Door')
+							if door then
+								local doorPart = door:IsA('BasePart') and door or door:FindFirstChildWhichIsA('BasePart')
+								if doorPart then
+									local distance = (hrp.Position - doorPart.Position).Magnitude
+									if distance <= clipRange then
+										-- Check if door is locked (no ClientOpen or door is locked)
+										local clientOpen = door:FindFirstChild('ClientOpen')
+										local lockPart = door:FindFirstChild('Lock')
+										if not clientOpen or lockPart then
+											clipThroughDoor(door)
+										end
+									end
+								end
+							end
+						end
+					end)
+				end))
+			end
+		end,
+		Tooltip = 'Automatically clips through locked doors'
+	})
+	
+	AutoClipDoors = DoorClip:CreateToggle({
+		Name = 'Auto Clip',
+		Default = true,
+		Function = function(val)
+			autoClipDoors = val
+		end
+	})
+	
+	ClipRange = DoorClip:CreateSlider({
+		Name = 'Range',
+		Min = 5,
+		Max = 30,
+		Default = 15,
+		Function = function(val)
+			clipRange = val
+		end,
+		Tooltip = 'How close you need to be to auto-clip'
+	})
+end)
