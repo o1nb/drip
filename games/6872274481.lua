@@ -1,5 +1,6 @@
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
+--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 local run = function(func)
 	func()
 end
@@ -7412,7 +7413,7 @@ run(function()
 	end
 	
 	Breaker = vape.Categories.Minigames:CreateModule({
-		Name = 'Breaker',
+		Name = 'Fucker',
 		Function = function(callback)
 			if callback then
 				for _ = 1, 30 do
@@ -7434,7 +7435,7 @@ run(function()
 	
 				local beds = collection('bed', Breaker)
 				local luckyblock = collection('LuckyBlock', Breaker)
-				local ironores = collection('iron-ore', Breaker)
+				local ironores = collection('iron_ore_mesh_block', Breaker)
 				customlist = collection('block', Breaker, function(tab, obj)
 					if table.find(Custom.ListEnabled, obj.Name) then
 						table.insert(tab, obj)
