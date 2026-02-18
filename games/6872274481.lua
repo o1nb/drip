@@ -1,3 +1,4 @@
+--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 local run = function(func)
 	func()
 end
@@ -741,7 +742,6 @@ run(function()
 		DragonEndFly = debug.getproto(Knit.Controllers.VoidDragonController.flapWings, 1),
 		DragonFly = Knit.Controllers.VoidDragonController.flapWings,
 		DropItem = Knit.Controllers.ItemDropController.dropItemInHand,
-		EquipItem = debug.getproto(require(replicatedStorage.TS.entity.entities['inventory-entity']).InventoryEntity.equipItem, 3),
 		FireProjectile = debug.getupvalue(Knit.Controllers.ProjectileController.launchProjectileWithValues, 2),
 		GroundHit = Knit.Controllers.FallDamageController.KnitStart,
 		GuitarHeal = Knit.Controllers.GuitarController.performHeal,
@@ -776,6 +776,17 @@ run(function()
 			notif('Vape', 'Failed to grab remote ('..i..')', 10, 'alert')
 		end
 		remotes[i] = remote
+	end
+
+	local equipFunc = require(replicatedStorage.TS.entity.entities['inventory-entity']).InventoryEntity.equipItem
+	for i = 1, 10 do
+		local ok, proto = pcall(debug.getproto, equipFunc, i)
+		if not ok then break end
+		local remote = dumpRemote(debug.getconstants(proto))
+		if remote ~= '' then
+			remotes.EquipItem = remote
+			break
+		end
 	end
 
 	OldBreak = bedwars.BlockController.isBlockBreakable
@@ -2045,7 +2056,6 @@ run(function()
 	})
 end)
 	
-local Attacking
 run(function()
 	local Killaura
 	local Targets
@@ -2071,6 +2081,7 @@ run(function()
 	local AnimationSpeed
 	local AnimationTween
 	local Limit
+	local AutoSword  -- new toggle
 	local LegitAura = {}
 	local Particles, Boxes = {}, {}
 	local anims, AnimDelay, AnimTween, armC0 = vape.Libraries.auraanims, tick()
@@ -2088,16 +2099,19 @@ run(function()
 			if bedwars.AppController:isLayerOpen(bedwars.UILayers.MAIN) then return false end
 		end
 
-		local sword = Limit.Enabled and store.hand or store.tools.sword
+		local sword
+		if AutoSword.Enabled then
+			sword = store.tools.sword
+		else
+			sword = Limit.Enabled and store.hand or store.tools.sword
+		end
+
 		if not sword or not sword.tool then return false end
 
 		local meta = bedwars.ItemMeta[sword.tool.Name]
-		if Limit.Enabled then
-			if store.hand.toolType ~= 'sword' or bedwars.DaoController.chargingMaid then return false end
-		end
 
-		if LegitAura.Enabled then
-			if (tick() - bedwars.SwordController.lastSwing) > 0.2 then return false end
+		if Limit.Enabled and not AutoSword.Enabled then
+			if store.hand.toolType ~= 'sword' or bedwars.DaoController.chargingMaid then return false end
 		end
 
 		return sword, meta
@@ -2174,6 +2188,15 @@ run(function()
 					local attacked, sword, meta = {}, getAttackData()
 					Attacking = false
 					store.KillauraTarget = nil
+
+					-- Auto‑equip best sword if enabled
+					if AutoSword.Enabled then
+						local bestSword = store.tools.sword
+						if bestSword and bestSword.tool and (not store.hand.tool or store.hand.tool ~= bestSword.tool) then
+							switchItem(bestSword.tool, 0)
+						end
+					end
+
 					if sword then
 						local plrs = entitylib.AllPosition({
 							Range = SwingRange.Value,
@@ -2270,7 +2293,6 @@ run(function()
 						entitylib.character.RootPart.CFrame = CFrame.lookAt(entitylib.character.RootPart.Position, Vector3.new(vec.X, entitylib.character.RootPart.Position.Y + 0.001, vec.Z))
 					end
 
-					--#attacked > 0 and #attacked * 0.02 or
 					task.wait(1 / UpdateRate.Value)
 				until not Killaura.Enabled
 			else
@@ -2297,7 +2319,7 @@ run(function()
 				end
 			end
 		end,
-		Tooltip = 'Attack players around you\nwithout aiming at them.'
+		Tooltip = 'Attack players around you without aiming at them.'
 	})
 	Targets = Killaura:CreateTargets({
 		Players = true,
@@ -2538,12 +2560,18 @@ run(function()
 		end,
 		Tooltip = 'Only attacks when the sword is held'
 	})
+	-- New AutoSword toggle
+	AutoSword = Killaura:CreateToggle({
+		Name = 'AutoSword',
+		Default = true,
+		Tooltip = 'Automatically equips the best sword when attacking'
+	})
 	--[[LegitAura = Killaura:CreateToggle({
 		Name = 'Swing only',
 		Tooltip = 'Only attacks while swinging manually'
 	})]]
 end)
-	
+
 run(function()
 	local Value
 	local CameraDir
@@ -3180,6 +3208,7 @@ run(function()
 		Visible = false,
 		Darker = true
 	})
+	
 end)
 	
 run(function()
