@@ -1,6 +1,7 @@
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
+--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 local run = function(func)
 	func()
 end
@@ -6378,7 +6379,9 @@ run(function()
 	local SpeedPotion
 	local Apple
 	local ShieldPotion
-	
+	local Pie
+	local SpeedPie
+
 	local function consumeCheck(attribute)
 		if entitylib.isAlive then
 			if SpeedPotion.Enabled and (not attribute or attribute == 'StatusEffect_speed') then
@@ -6389,11 +6392,20 @@ run(function()
 					end
 				end
 			end
-	
+
+			if SpeedPie.Enabled and (not attribute or attribute == 'StatusEffect_speed') then
+				local pie = getItem('pie')
+				if pie and (not lplr.Character:GetAttribute('StatusEffect_speed')) then
+					for _ = 1, 4 do
+						if bedwars.Client:Get(remotes.ConsumeItem):CallServer({item = pie.tool}) then break end
+					end
+				end
+			end
+
 			if Apple.Enabled and (not attribute or attribute:find('Health')) then
 				if (lplr.Character:GetAttribute('Health') / lplr.Character:GetAttribute('MaxHealth')) <= (Health.Value / 100) then
 					local apple = getItem('orange') or (not lplr.Character:GetAttribute('StatusEffect_golden_apple') and getItem('golden_apple')) or getItem('apple')
-					
+
 					if apple then
 						bedwars.Client:Get(remotes.ConsumeItem):CallServerAsync({
 							item = apple.tool
@@ -6401,11 +6413,11 @@ run(function()
 					end
 				end
 			end
-	
+
 			if ShieldPotion.Enabled and (not attribute or attribute:find('Shield')) then
 				if (lplr.Character:GetAttribute('Shield_POTION') or 0) == 0 then
 					local shield = getItem('big_shield') or getItem('mini_shield')
-	
+
 					if shield then
 						bedwars.Client:Get(remotes.ConsumeItem):CallServerAsync({
 							item = shield.tool
@@ -6415,7 +6427,7 @@ run(function()
 			end
 		end
 	end
-	
+
 	AutoConsume = vape.Categories.Inventory:CreateModule({
 		Name = 'AutoConsume',
 		Function = function(callback)
@@ -6440,6 +6452,10 @@ run(function()
 	})
 	SpeedPotion = AutoConsume:CreateToggle({
 		Name = 'Speed Potions',
+		Default = true
+	})
+	SpeedPie = AutoConsume:CreateToggle({
+		Name = 'Speed Pie',
 		Default = true
 	})
 	Apple = AutoConsume:CreateToggle({
@@ -8888,6 +8904,585 @@ run(function()
 			end
 		end,
 		Tooltip = 'Pack 1 - Full pack (swords, tools, bows, etc)\nPack 2 - Swords only'
+	})
+end)
+local GodMode = {Enabled = false}
+run(function()
+    local antiDeath = {}
+    local antiDeathConfig = {
+        Mode = {},
+        BoostMode = {},
+        SongId = {},
+        Health = {},
+        Velocity = {},
+        CFrame = {},
+        TweenPower = {},
+        TweenDuration = {},
+        SkyPosition = {},
+        AutoDisable = {},
+        Sound = {},
+        Notify = {}
+    }
+    local antiDeathState = {}
+    local handlers = {}
+
+    function handlers.new()
+        local self = {
+			godmode = false,
+            boost = false,
+            inf = false,
+            notify = false,
+            id = false,
+            hrp = entitylib.character.RootPart,
+            hasNotified = false
+        }
+        setmetatable(self, { __index = handlers })
+        return self
+    end
+
+    function handlers:enable()
+		antiDeath:Clean(runService.Heartbeat:Connect(function()
+			if not isAlive(lplr, true) then
+                handlers:disable()
+                return
+            end
+
+            if getHealth() <= antiDeathConfig.Health.Value and getHealth() > 0 then
+                if not handlers.boost then
+                    handlers:activateMode()
+                    if not handlers.hasNotified and antiDeathConfig.Notify.Enabled then
+                        handlers:sendNotification()
+                    end
+                    handlers:playNotificationSound()
+                    handlers.boost = true
+                end
+            else
+                handlers:resetMode()
+				pcall(function()
+					handlers.hrp = entityLibrary.character.HumanoidRootPart
+					handlers.hrp.Anchored = false
+				end)
+                handlers.boost = false
+
+                if handlers.hasNotified then
+                    handlers.hasNotified = false
+                end
+            end
+		end))
+    end
+
+    function handlers:disable()
+        --RunLoops:UnbindFromHeartbeat('antiDeath')
+    end
+
+    function handlers:activateMode()
+        local modeActions = {
+            Infinite = function() self:enableInfiniteMode() end,
+            Boost = function() self:applyBoost() end,
+            Sky = function() self:moveToSky() end,
+			AntiHit = function() self:enableAntiHitMode() end
+        }
+		if antiDeathConfig.Mode.Value == "Infinite" then return end
+        modeActions[antiDeathConfig.Mode.Value]()
+    end
+
+	function handlers:enableAntiHitMode()
+		if not GodMode.Enabled then
+			GodMode:Toggle(false)
+			self.godmode = true
+		end
+	end
+
+    function handlers:enableInfiniteMode()
+        if not vape.Modules.InfiniteFly.Enabled then
+            vape.Modules.InfiniteFly:Toggle(true)
+            self.inf = true
+        end
+    end
+
+    function handlers:applyBoost()
+        local boostActions = {
+            Velocity = function() self.hrp.Velocity += Vector3.new(0, antiDeathConfig.Velocity.Value, 0) end,
+            CFrame = function() self.hrp.CFrame += Vector3.new(0, antiDeathConfig.CFrame.Value, 0) end,
+            Tween = function()
+                tweenService:Create(self.hrp, twinfo(antiDeathConfig.TweenDuration.Value / 10), {
+                    CFrame = self.hrp.CFrame + Vector3.new(0, antiDeathConfig.TweenPower.Value, 0)
+                }):Play()
+            end
+        }
+        boostActions[antiDeathConfig.BoostMode.Value]()
+    end
+
+    function handlers:moveToSky()
+        self.hrp.CFrame += Vector3.new(0, antiDeathConfig.SkyPosition.Value, 0)
+        self.hrp.Anchored = true
+    end
+
+    function handlers:sendNotification()
+        InfoNotification('AntiDeath', 'Prevented death. Health is lower than ' .. antiDeathConfig.Health.Value ..
+            '. (Current health: ' .. math.floor(getHealth() + 0.5) .. ')', 5)
+        self.hasNotified = true
+    end
+
+    function handlers:playNotificationSound()
+        if antiDeathConfig.Sound.Enabled then
+            local soundId = antiDeathConfig.SongId.Value ~= '' and antiDeathConfig.SongId.Value or '7396762708'
+            playSound(soundId, false)
+        end
+    end
+
+    function handlers:resetMode()
+        if self.inf then
+            if antiDeathConfig.AutoDisable.Enabled then
+                if vape.Modules.InfiniteFly.Enabled then
+                    vape.Modules.InfiniteFly:Toggle(false)
+                end
+            end
+            self.inf = false
+            self.hasNotified = false
+        elseif self.godmode then
+			if antiDeathConfig.AutoDisable.Enabled then
+                if GodMode.Enabled then
+                    GodMode:Toggle(false)
+                end
+            end
+            self.godmode = false
+            self.hasNotified = false
+		end
+    end
+
+    local antiDeathStatus = handlers.new()
+
+    antiDeath = vape.Categories.Utility:CreateModule({
+        Name = 'AntiDeath',
+        Function = function(callback)
+            if callback then
+                coroutine.wrap(function()
+                    antiDeathStatus:enable()
+                end)()
+            else
+                pcall(function()
+                    antiDeathStatus:disable()
+                end)
+            end
+        end,
+        Default = false,
+        ExtraText = function()
+            return antiDeathConfig.Mode.Value
+        end
+    })
+
+    antiDeathConfig.Mode = antiDeath:CreateDropdown({
+        Name = 'Mode',
+        List = {'Infinite', 'Boost', 'Sky', 'AntiHit'},
+        Default = 'AntiHit',
+        Function = function(val)
+            antiDeathConfig.BoostMode.Object.Visible = val == 'Boost'
+            antiDeathConfig.SkyPosition.Object.Visible = val == 'Sky'
+            antiDeathConfig.AutoDisable.Object.Visible = (val == 'Infinite' or val == 'AntiHit')
+            antiDeathConfig.Velocity.Object.Visible = false
+            antiDeathConfig.CFrame.Object.Visible = false
+            antiDeathConfig.TweenPower.Object.Visible = false
+            antiDeathConfig.TweenDuration.Object.Visible = false
+        end
+    })
+
+    antiDeathConfig.BoostMode = antiDeath:CreateDropdown({
+        Name = 'Boost',
+        List = { 'Velocity', 'CFrame', 'Tween' },
+        Default = 'Velocity',
+        Function = function(val)
+            antiDeathConfig.Velocity.Object.Visible = val == 'Velocity'
+            antiDeathConfig.CFrame.Object.Visible = val == 'CFrame'
+            antiDeathConfig.TweenPower.Object.Visible = val == 'Tween'
+            antiDeathConfig.TweenDuration.Object.Visible = val == 'Tween'
+        end
+    })
+    antiDeathConfig.BoostMode.Object.Visible = false
+
+    antiDeathConfig.SongId = antiDeath:CreateTextBox({
+        Name = 'SongID',
+        TempText = 'Song ID',
+        Tooltip = 'ID to play the song.',
+        FocusLost = function()
+            if antiDeath.Enabled then
+                antiDeath:Toggle()
+                antiDeath:Toggle()
+            end
+        end
+    })
+    antiDeathConfig.SongId.Object.Visible = false
+
+    antiDeathConfig.Health = antiDeath:CreateSlider({
+        Name = 'Health Trigger',
+        Min = 10,
+        Max = 90,
+        Default = 50,
+        Function = function(val) end
+    })
+
+    antiDeathConfig.Velocity = antiDeath:CreateSlider({
+        Name = 'Velocity Boost',
+        Min = 100,
+        Max = 600,
+        Default = 600,
+        Function = function(val) end
+    })
+    antiDeathConfig.Velocity.Object.Visible = false
+
+    antiDeathConfig.CFrame = antiDeath:CreateSlider({
+        Name = 'CFrame Boost',
+        Min = 100,
+        Max = 1000,
+        Default = 1000,
+        Function = function(val) end
+    })
+    antiDeathConfig.CFrame.Object.Visible = false
+
+    antiDeathConfig.TweenPower = antiDeath:CreateSlider({
+        Name = 'Tween Boost',
+        Min = 100,
+        Max = 1300,
+        Default = 1000,
+        Function = function(val) end
+    })
+    antiDeathConfig.TweenPower.Object.Visible = false
+
+    antiDeathConfig.TweenDuration = antiDeath:CreateSlider({
+        Name = 'Tween Duration',
+        Min = 1,
+        Max = 10,
+        Default = 4,
+        Function = function(val) end
+    })
+    antiDeathConfig.TweenDuration.Object.Visible = false
+
+    antiDeathConfig.SkyPosition = antiDeath:CreateSlider({
+        Name = 'Sky Position',
+        Min = 100,
+        Max = 1000,
+        Default = 1000,
+        Function = function(val) end
+    })
+    antiDeathConfig.SkyPosition.Object.Visible = false
+
+    antiDeathConfig.AutoDisable = antiDeath:CreateToggle({
+        Name = 'Auto Disable',
+        Function = function(val) end,
+        Default = true
+    })
+    antiDeathConfig.AutoDisable.Object.Visible = false
+
+    antiDeathConfig.Sound = antiDeath:CreateToggle({
+        Name = 'Sound',
+        Function = function(callback)
+            antiDeathConfig.SongId.Object.Visible = callback
+        end,
+        Default = true
+    })
+
+    antiDeathConfig.Notify = antiDeath:CreateToggle({
+        Name = 'Notification',
+        Default = true,
+        Function = function(callback) end
+    })
+end)
+run(function()
+	local AntiHit = {}
+	local physEngine = game:GetService("RunService")
+	local worldSpace = game.Workspace
+	local camView = worldSpace.CurrentCamera
+	local plyr = lplr
+	local entSys = entitylib
+	local queryutil = {}
+	function queryutil:setQueryIgnored(part, index)
+		if index == nil then index = true end
+		if part then part:SetAttribute("gamecore_GameQueryIgnore", index) end
+	end
+	local utilPack = {QueryUtil = queryutil}
+
+	local dupeNode, altHeight, initOk, sysOk = nil, nil, false, true
+	shared.anchorBase = nil
+	shared.evadeFlag = false
+
+	local trigSet = {p = true, n = false, w = false}
+	local shiftMode = "Up"
+	local scanRad = 30
+
+	local function genTwin()
+		if entSys.isAlive and entSys.character.Humanoid.Health > 0 and entSys.character.HumanoidRootPart then
+			altHeight = entSys.character.Humanoid.HipHeight
+			shared.anchorBase = entSys.character.HumanoidRootPart
+			utilPack.QueryUtil:setQueryIgnored(shared.anchorBase, true)
+			if not plyr.Character or not plyr.Character.Parent then return false end
+
+			plyr.Character.Parent = game
+			dupeNode = shared.anchorBase:Clone()
+			dupeNode.Parent = plyr.Character
+			shared.anchorBase.Parent = camView
+			dupeNode.CFrame = shared.anchorBase.CFrame
+
+			plyr.Character.PrimaryPart = dupeNode
+			entSys.character.HumanoidRootPart = dupeNode
+			entSys.character.RootPart = dupeNode
+			plyr.Character.Parent = worldSpace
+
+			for _, x in plyr.Character:GetDescendants() do
+				if x:IsA('Weld') or x:IsA('Motor6D') then
+					if x.Part0 == shared.anchorBase then x.Part0 = dupeNode end
+					if x.Part1 == shared.anchorBase then x.Part1 = dupeNode end
+				end
+			end
+			return true
+		end
+		return false
+	end
+
+	local function resetCore()
+		if not entSys.isAlive or not shared.anchorBase or not shared.anchorBase:IsDescendantOf(game) then
+			shared.anchorBase = nil
+			dupeNode = nil
+			return false
+		end
+
+		if not plyr.Character or not plyr.Character.Parent then return false end
+
+		plyr.Character.Parent = game
+
+		shared.anchorBase.Parent = plyr.Character
+		shared.anchorBase.CanCollide = true
+		shared.anchorBase.Velocity = Vector3.zero 
+		shared.anchorBase.Anchored = false 
+
+		plyr.Character.PrimaryPart = shared.anchorBase
+		entSys.character.HumanoidRootPart = shared.anchorBase
+		entSys.character.RootPart = shared.anchorBase
+
+		for _, x in plyr.Character:GetDescendants() do
+			if x:IsA('Weld') or x:IsA('Motor6D') then
+				if x.Part0 == dupeNode then x.Part0 = shared.anchorBase end
+				if x.Part1 == dupeNode then x.Part1 = shared.anchorBase end
+			end
+		end
+
+		local prevLoc = dupeNode and dupeNode.CFrame or shared.anchorBase.CFrame
+		if dupeNode then
+			dupeNode:Destroy()
+			dupeNode = nil
+		end
+
+		plyr.Character.Parent = worldSpace
+		shared.anchorBase.CFrame = prevLoc
+
+		if entSys.character.Humanoid then
+			entSys.character.Humanoid.HipHeight = altHeight or 2
+		end
+
+		shared.anchorBase = nil
+		shared.evadeFlag = false
+		altHeight = nil
+
+		return true
+	end
+
+	local function shiftPos()
+		if not entSys.isAlive or not shared.anchorBase or not AntiHit.on then return end
+
+		local hits = entSys.AllPosition({
+			Range = scanRad,
+			Wallcheck = trigSet.w or nil,
+			Part = 'RootPart',
+			Players = trigSet.p,
+			NPCs = trigSet.n,
+			Limit = 1
+		})
+
+		if #hits > 0 and not shared.evadeFlag then
+			local base = entSys.character.RootPart
+			if base then
+				shared.evadeFlag = true
+				local targetY = shiftMode == "Up" and 150 or 0
+				shared.anchorBase.CFrame = CFrame.new(base.CFrame.X, targetY, base.CFrame.Z)
+				task.wait(0.15)
+				shared.anchorBase.CFrame = base.CFrame
+				task.wait(0.05)
+				shared.evadeFlag = false
+			end
+		end
+	end
+
+	function AntiHit:engage()
+		if self.on then return end
+		self.on = true
+
+		initOk = genTwin()
+		if not initOk then
+			self:disengage()
+			return
+		end
+
+		self.physHook = physEngine.PreSimulation:Connect(function(dt)
+			if entSys.isAlive and shared.anchorBase and entSys.character.RootPart then
+				local currBase = entSys.character.RootPart
+				local currPos = currBase.CFrame
+
+				if not isnetworkowner(shared.anchorBase) then
+					currBase.CFrame = shared.anchorBase.CFrame
+					currBase.Velocity = shared.anchorBase.Velocity
+					return
+				end
+				if not shared.evadeFlag then
+					shared.anchorBase.CFrame = currPos
+				end
+				shared.anchorBase.Velocity = Vector3.zero
+				shared.anchorBase.CanCollide = false
+				shiftPos()
+			else
+				self:disengage() 
+			end
+		end)
+
+		self.respawnHook = entSys.Events.LocalAdded:Connect(function(_)
+			if self.on then
+				self:disengage() 
+				task.wait(0.1) 
+				self:engage() 
+			end
+		end)
+	end
+
+	local Antihit_core = {Enabled = false}
+
+	function AntiHit:disengage()
+		self.on = false
+		local success, err = pcall(resetCore)
+		if not success then
+			warn("AntiHit resetCore failed: " .. tostring(err))
+		end
+		if self.physHook then
+			self.physHook:Disconnect()
+			self.physHook = nil
+		end
+		if self.respawnHook then
+			self.respawnHook:Disconnect()
+			self.respawnHook = nil
+		end
+	end
+
+	Antihit_core = vape.Categories.Blatant:CreateModule({
+		Name = "AntiHit",
+		Function = function(active)
+			if active then
+				warningNotification("Antihit V2", "Warning: this is still experimental!", 3)
+			end
+			task.spawn(function()
+				repeat task.wait() until store.matchState > 0 or not Antihit_core.Enabled
+				if not Antihit_core.Enabled then return end
+				if active then
+					AntiHit:engage()
+				else
+					AntiHit:disengage()
+				end
+			end)
+		end,
+		Tooltip = "Dodges attacks."
+	})
+
+	Antihit_core:CreateTargets({
+		Players = true,
+		NPCs = false
+	})
+	Antihit_core:CreateDropdown({
+		Name = "Shift Type",
+		List = {"Up", "Down"},
+		Value = "Up",
+		Function = function(opt) shiftMode = opt end
+	})
+	Antihit_core:CreateSlider({
+		Name = "Scan Perimeter",
+		Min = 1,
+		Max = 30,
+		Default = 30,
+		Suffix = function(v) return v == 1 and "span" or "spans" end,
+		Function = function(v) scanRad = v end
+	})
+end)
+run(function()
+	function IsAlive(plr)
+		plr = plr or lplr
+		if not plr.Character then return false end
+		if not plr.Character:FindFirstChild("Head") then return false end
+		if not plr.Character:FindFirstChild("Humanoid") then return false end
+		if plr.Character:FindFirstChild("Humanoid").Health < 0.11 then return false end
+		return true
+	end
+	local Slowmode = {Value = 2}
+	GodMode = vape.Categories.Blatant:CreateModule({
+		Name = "AntiShit",
+		Function = function(callback)
+			if callback then
+				task.spawn(function()
+					repeat task.wait()
+						local res, msg = pcall(function()
+							if (not vape.Modules.Fly.Enabled) and (not vape.Modules.InfiniteFly.Enabled) then
+								for i, v in pairs(game:GetService("Players"):GetChildren()) do
+									if v.Team ~= lplr.Team and IsAlive(v) and IsAlive(lplr) then
+										if v and v ~= lplr then
+											local TargetDistance = lplr:DistanceFromCharacter(v.Character:FindFirstChild("HumanoidRootPart").CFrame.p)
+											if TargetDistance < 25 then
+												if not lplr.Character:WaitForChild("HumanoidRootPart"):FindFirstChildOfClass("BodyVelocity") then
+													repeat task.wait() until shared.GlobalStore.matchState ~= 0
+													if not (v.Character.HumanoidRootPart.Velocity.Y < -10*5) then
+														lplr.Character.Archivable = true
+				
+														local Clone = lplr.Character:Clone()
+														Clone.Parent = game.Workspace
+														Clone.Head:ClearAllChildren()
+														gameCamera.CameraSubject = Clone:FindFirstChild("Humanoid")
+					
+														for i,v in pairs(Clone:GetChildren()) do
+															if string.lower(v.ClassName):find("part") and v.Name ~= "HumanoidRootPart" then
+																v.Transparency = 1
+															end
+															if v:IsA("Accessory") then
+																v:FindFirstChild("Handle").Transparency = 1
+															end
+														end
+					
+														lplr.Character:WaitForChild("HumanoidRootPart").CFrame = lplr.Character:WaitForChild("HumanoidRootPart").CFrame + Vector3.new(0,100,0)
+					
+														GodMode:Clean(game:GetService("RunService").RenderStepped:Connect(function()
+															if Clone ~= nil and Clone:FindFirstChild("HumanoidRootPart") then
+																Clone.HumanoidRootPart.Position = Vector3.new(lplr.Character:WaitForChild("HumanoidRootPart").Position.X, Clone.HumanoidRootPart.Position.Y, lplr.Character:WaitForChild("HumanoidRootPart").Position.Z)
+															end
+														end))
+					
+														task.wait(Slowmode.Value/10)
+														lplr.Character:WaitForChild("HumanoidRootPart").Velocity = Vector3.new(lplr.Character:WaitForChild("HumanoidRootPart").Velocity.X, -1, lplr.Character:WaitForChild("HumanoidRootPart").Velocity.Z)
+														lplr.Character:WaitForChild("HumanoidRootPart").CFrame = Clone.HumanoidRootPart.CFrame
+														gameCamera.CameraSubject = lplr.Character:FindFirstChild("Humanoid")
+														Clone:Destroy()
+														task.wait(0.15)
+													end
+												end
+											end
+										end
+									end
+								end
+							end
+						end)
+						if not res then warn(msg) end
+					until (not GodMode.Enabled)
+				end)
+			end
+		end
+	})
+	Slowmode = GodMode:CreateSlider({
+		Name = "Slowmode",
+		Function = function() end,
+		Default = 2,
+		Min = 1,
+		Max = 25
 	})
 end)
 run(function()
