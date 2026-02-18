@@ -1,4 +1,5 @@
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
+--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 -- Doors Vape Modules
 -- Place ID: 6839171747
 -- Game ID: 2440500124
@@ -2107,5 +2108,144 @@ run(function()
 			clipRange = val
 		end,
 		Tooltip = 'How close you need to be to auto-clip'
+	})
+end)
+run(function()
+	local AutoInteract
+	local autoInteractConnection
+	local pickupRange = 20
+	
+	local function isInRange(obj)
+		if not entitylib.isAlive then return false end
+		if not obj or not obj:IsA('BasePart') and not obj:IsA('Model') then return false end
+		
+		local objPos
+		if obj:IsA('Model') then
+			objPos = obj:GetPivot().Position
+		else
+			objPos = obj.Position
+		end
+		
+		local charPos = entitylib.character.RootPart.Position
+		return (charPos - objPos).Magnitude <= pickupRange
+	end
+	
+	local function interactWithObject(obj)
+		-- Find ProximityPrompt in object or its descendants
+		local prompt = obj:FindFirstChildOfClass('ProximityPrompt')
+		if not prompt then
+			for _, child in obj:GetDescendants() do
+				if child:IsA('ProximityPrompt') then
+					prompt = child
+					break
+				end
+			end
+		end
+		
+		if prompt and prompt.Enabled and isInRange(obj) then
+			if prompt.HoldDuration > 0 then
+				local originalHold = prompt.HoldDuration
+				prompt.HoldDuration = 0
+				fireproximityprompt(prompt)
+				task.delay(0.05, function()
+					if prompt and prompt.Parent then
+						prompt.HoldDuration = originalHold
+					end
+				end)
+			else
+				fireproximityprompt(prompt)
+			end
+			return true
+		end
+		return false
+	end
+	
+	local function autoInteract()
+		if not entitylib.isAlive then return end
+		
+		local currentRooms = workspace:FindFirstChild('CurrentRooms')
+		if not currentRooms then return end
+		
+		-- Auto open locked doors
+		for _, room in currentRooms:GetChildren() do
+			local door = room:FindFirstChild('Door')
+			if door then
+				local locked = door:FindFirstChild('Lock')
+				if locked and isInRange(door) then
+					interactWithObject(locked)
+				end
+				
+				-- Also try the main door model
+				interactWithObject(door)
+			end
+		end
+		
+		-- Auto pickup gold coins
+		for _, obj in workspace:GetDescendants() do
+			if obj.Name == 'GoldPile' or obj.Name == 'Gold' or (obj:IsA('Model') and obj.Name:lower():find('coin')) then
+				if isInRange(obj) then
+					interactWithObject(obj)
+				end
+			end
+		end
+		
+		-- Auto pickup keys
+		for _, room in currentRooms:GetChildren() do
+			for _, obj in room:GetDescendants() do
+				if obj.Name == 'KeyObtain' or obj.Name == 'Key' then
+					if isInRange(obj) then
+						interactWithObject(obj)
+					end
+				end
+			end
+		end
+		
+		-- Check for any other interactable items with ProximityPrompts
+		for _, obj in currentRooms:GetDescendants() do
+			if obj:IsA('ProximityPrompt') and obj.Enabled then
+				local actionText = (obj.ActionText or ''):lower()
+				-- Auto-interact with pickup/unlock actions
+				if actionText:find('pick') or actionText:find('unlock') or actionText:find('collect') or actionText:find('take') then
+					if isInRange(obj.Parent) then
+						if obj.HoldDuration > 0 then
+							local originalHold = obj.HoldDuration
+							obj.HoldDuration = 0
+							fireproximityprompt(obj)
+							task.delay(0.05, function()
+								if obj and obj.Parent then
+									obj.HoldDuration = originalHold
+								end
+							end)
+						else
+							fireproximityprompt(obj)
+						end
+					end
+				end
+			end
+		end
+	end
+	
+	AutoInteract = vape.Categories.Utility:CreateModule({
+		Name = 'AutoInteract',
+		Function = function(callback)
+			if callback then
+				autoInteractConnection = runService.Heartbeat:Connect(autoInteract)
+				AutoInteract:Clean(autoInteractConnection)
+			end
+		end,
+		Tooltip = 'Auto opens doors, picks up gold and keys'
+	})
+	
+	vape.Categories.Utility:CreateSlider({
+		Name = 'Pickup Range',
+		Min = 10,
+		Max = 50,
+		Default = 20,
+		Function = function(val)
+			pickupRange = val
+		end,
+		Suffix = function(val)
+			return ' studs'
+		end
 	})
 end)
