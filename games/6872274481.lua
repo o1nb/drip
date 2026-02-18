@@ -1,4 +1,5 @@
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
+--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 local run = function(func)
 	func()
 end
@@ -8599,7 +8600,295 @@ run(function()
 		end
 	})
 end)
-	
+run(function()
+	local TexturePack
+	local PackSelect
+	local import
+
+	local packs = {
+		['Pack 1'] = {
+			asset = 'rbxassetid://105125574712206',
+			items = {
+				{name = 'wood_sword', model = 'Wood_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_sword', model = 'Stone_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_sword', model = 'Iron_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'diamond_sword', model = 'Diamond_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'emerald_sword', model = 'Emerald_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_pickaxe', model = 'Wood_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_pickaxe', model = 'Stone_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_pickaxe', model = 'Iron_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_pickaxe', model = 'Diamond_Pickaxe', offset = CFrame.Angles(0, math.rad(80), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_axe', model = 'Wood_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_axe', model = 'Stone_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_axe', model = 'Iron_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_axe', model = 'Diamond_Axe', offset = CFrame.Angles(0, math.rad(-90), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'telepearl', model = 'TelePearl', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_bow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_crossbow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'tactical_crossbow', model = 'Bow', offset = CFrame.Angles(0, math.rad(180), math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'speed_potion', model = 'SpeedPotion', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+			}
+		},
+		['Pack 2'] = {
+			asset = 'rbxassetid://86938021191941',
+			items = {
+				{name = 'wood_sword', model = 'Wood_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_sword', model = 'Stone_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_sword', model = 'Iron_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'diamond_sword', model = 'Diamond_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'emerald_sword', model = 'Diamond_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'Rageblade', model = 'Diamond_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+			}
+		},
+		['Pack 3'] = {
+			asset = 'rbxassetid://14195000447',
+			items = {
+				{name = 'wood_sword', model = 'Wood_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_sword', model = 'Stone_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_sword', model = 'Iron_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'diamond_sword', model = 'Diamond_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'emerald_sword', model = 'Emerald_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_pickaxe', model = 'Wood_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_pickaxe', model = 'Stone_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_pickaxe', model = 'Iron_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_pickaxe', model = 'Diamond_Pickaxe', offset = CFrame.Angles(0, math.rad(80), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_axe', model = 'Wood_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_axe', model = 'Stone_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_axe', model = 'Iron_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_axe', model = 'Diamond_Axe', offset = CFrame.Angles(0, math.rad(-90), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'telepearl', model = 'TelePearl', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_bow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_crossbow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'tactical_crossbow', model = 'Bow', offset = CFrame.Angles(0, math.rad(180), math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'speed_potion', model = 'SpeedPotion', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+			}
+		},
+		['Pack 4'] = {
+			asset = 'rbxassetid://14356045010',
+			items = {
+				{name = 'wood_sword', model = 'Wood_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_sword', model = 'Stone_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_sword', model = 'Iron_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'diamond_sword', model = 'Diamond_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'emerald_sword', model = 'Emerald_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_pickaxe', model = 'Wood_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_pickaxe', model = 'Stone_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_pickaxe', model = 'Iron_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_pickaxe', model = 'Diamond_Pickaxe', offset = CFrame.Angles(0, math.rad(80), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_axe', model = 'Wood_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_axe', model = 'Stone_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_axe', model = 'Iron_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_axe', model = 'Diamond_Axe', offset = CFrame.Angles(0, math.rad(-90), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'telepearl', model = 'TelePearl', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_bow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_crossbow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'tactical_crossbow', model = 'Bow', offset = CFrame.Angles(0, math.rad(180), math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'speed_potion', model = 'SpeedPotion', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+			}
+		},
+		['Lma'] = {
+			asset = 'rbxassetid://14329464322',
+			items = {
+				{name = 'wood_sword', model = 'Wood_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_sword', model = 'Stone_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_sword', model = 'Iron_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'diamond_sword', model = 'Diamond_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'emerald_sword', model = 'Emerald_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_pickaxe', model = 'Wood_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_pickaxe', model = 'Stone_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_pickaxe', model = 'Iron_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_pickaxe', model = 'Diamond_Pickaxe', offset = CFrame.Angles(0, math.rad(80), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_axe', model = 'Wood_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_axe', model = 'Stone_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_axe', model = 'Iron_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_axe', model = 'Diamond_Axe', offset = CFrame.Angles(0, math.rad(-90), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'telepearl', model = 'TelePearl', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_bow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_crossbow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'tactical_crossbow', model = 'Bow', offset = CFrame.Angles(0, math.rad(180), math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'speed_potion', model = 'SpeedPotion', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+			}
+		},
+		['6'] = {
+			asset = 'rbxassetid://14376799029',
+			items = {
+				{name = 'wood_sword', model = 'Wood_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_sword', model = 'Stone_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_sword', model = 'Iron_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'diamond_sword', model = 'Diamond_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'emerald_sword', model = 'Emerald_Sword', offset = CFrame.Angles(0, math.rad(-100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'stone_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'iron_scythe', model = 'Scythe', offset = CFrame.Angles(0, math.rad(100), math.rad(-90)), charOffset = CFrame.new(0.4, 0, -0.9)},
+				{name = 'wood_pickaxe', model = 'Wood_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_pickaxe', model = 'Stone_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_pickaxe', model = 'Iron_Pickaxe', offset = CFrame.Angles(0, math.rad(-190), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_pickaxe', model = 'Diamond_Pickaxe', offset = CFrame.Angles(0, math.rad(80), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_axe', model = 'Wood_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'stone_axe', model = 'Stone_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'iron_axe', model = 'Iron_Axe', offset = CFrame.Angles(0, 0, math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'diamond_axe', model = 'Diamond_Axe', offset = CFrame.Angles(0, math.rad(-90), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'telepearl', model = 'TelePearl', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_bow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'wood_crossbow', model = 'Bow', offset = CFrame.Angles(0, 0, math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'tactical_crossbow', model = 'Bow', offset = CFrame.Angles(0, math.rad(180), math.rad(90)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+				{name = 'speed_potion', model = 'SpeedPotion', offset = CFrame.Angles(math.rad(45), math.rad(-180), math.rad(-95)), charOffset = CFrame.new(-0.2, 0, -0.08)},
+			}
+		},
+	}
+
+	local lookup = {}
+	local extraRotation = CFrame.Angles(0, math.rad(-50), 0)
+
+	local function hideParts(parent)
+		for _, v in parent:GetDescendants() do
+			if v:IsA('BasePart') then
+				v.Transparency = 1
+			end
+		end
+	end
+
+	local function weldModel(model, handle)
+		local weld = Instance.new('WeldConstraint')
+		weld.Part0 = model
+		weld.Part1 = handle
+		weld.Parent = model
+	end
+
+	local function applyViewmodel(tool, entry)
+		local src = import and import:FindFirstChild(entry.model)
+		if not src then return end
+		hideParts(tool)
+		local handle = tool:FindFirstChild('Handle')
+		if not handle then return end
+		local clone = src:Clone()
+		clone.CFrame = handle.CFrame * entry.offset * extraRotation
+		clone.Parent = tool
+		weldModel(clone, handle)
+	end
+
+	local function applyCharacter(tool, entry)
+		if not lplr.Character then return end
+		local charTool = lplr.Character:FindFirstChild(tool.Name)
+		if not charTool or not charTool:IsA('Accessory') then return end
+		local src = import and import:FindFirstChild(entry.model)
+		if not src then return end
+		hideParts(charTool)
+		local handle = charTool:FindFirstChild('Handle')
+		if not handle then return end
+		local clone = src:Clone()
+		clone.Anchored = false
+		clone.CFrame = handle.CFrame * entry.offset * extraRotation * entry.charOffset
+		clone.Parent = charTool
+		weldModel(clone, handle)
+	end
+
+	local function onViewmodelChild(tool)
+		if not tool:IsA('Accessory') then return end
+		local entry = lookup[tool.Name]
+		if not entry then return end
+		applyViewmodel(tool, entry)
+		task.spawn(applyCharacter, tool, entry)
+	end
+
+	local function hookViewmodel()
+		local viewmodel = gameCamera:FindFirstChild('Viewmodel')
+		if viewmodel then
+			TexturePack:Clean(viewmodel.ChildAdded:Connect(onViewmodelChild))
+			for _, child in viewmodel:GetChildren() do
+				task.spawn(onViewmodelChild, child)
+			end
+		end
+	end
+
+	local function loadPack(packName)
+		local pack = packs[packName]
+		if not pack then return end
+
+		if import then
+			import:Destroy()
+			import = nil
+		end
+		table.clear(lookup)
+
+		local suc, objs = pcall(game.GetObjects, game, pack.asset)
+		if not suc or not objs or not objs[1] then
+			notif('TexturePack', 'Failed to load ' .. packName, 5, 'alert')
+			return false
+		end
+
+		import = objs[1]
+		import.Parent = replicatedStorage
+
+		for _, entry in pack.items do
+			lookup[entry.name] = entry
+		end
+
+		return true
+	end
+
+	TexturePack = vape.Categories.Render:CreateModule({
+		Name = 'TexturePack',
+		Function = function(callback)
+			if callback then
+				if not loadPack(PackSelect.Value) then
+					TexturePack:Toggle()
+					return
+				end
+
+				hookViewmodel()
+
+				TexturePack:Clean(gameCamera.ChildAdded:Connect(function(child)
+					if child.Name == 'Viewmodel' then
+						hookViewmodel()
+					end
+				end))
+
+				TexturePack:Clean(function()
+					if import then
+						import:Destroy()
+						import = nil
+					end
+					table.clear(lookup)
+				end)
+			else
+				import = nil
+				table.clear(lookup)
+			end
+		end,
+		Tooltip = 'Replaces item models with a custom texture pack'
+	})
+
+	local packNames = {}
+	for name in packs do
+		table.insert(packNames, name)
+	end
+	table.sort(packNames)
+
+	PackSelect = TexturePack:CreateDropdown({
+		Name = 'Pack',
+		List = packNames,
+		Function = function()
+			if TexturePack.Enabled then
+				TexturePack:Toggle()
+				TexturePack:Toggle()
+			end
+		end,
+		Tooltip = 'Pack 1 - Full pack (swords, tools, bows, etc)\nPack 2 - Swords only'
+	})
+end)
 run(function()
 	local WinEffect
 	local List
